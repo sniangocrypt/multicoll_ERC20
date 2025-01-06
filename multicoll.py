@@ -6,7 +6,19 @@ from web3.providers.async_rpc import AsyncHTTPProvider
 
 w3_async = AsyncWeb3(AsyncHTTPProvider('https://rpc.ankr.com/arbitrum')) # УКАЖИТЕ РПС НУЖНОЙ СЕТИ
 
-rasdelitel = False # True если нужно добавить разделитель ; для импорта в таблицу и разделения
+viev = 1 # Вид ответа; при варианте 1
+             # Балансы для USDC:
+                # 0x21906Db0Bec3cD9d4b3177ABD4bE5b7Eb8945e34;0.000
+                # 0x3038b24c79724dec422312879c9DfB3d3CaCd26B;0.000
+                # 0xD3eC1c7Ea0a0798184EDad45Bb625FF37606d89E;0.000
+         # Вид ответа; при варианте 2
+                # Балансы 0x21906Db0Bec3cD9d4b3177ABD4bE5b7Eb8945e34
+                # USDC=0.000
+                # USDT=0.000
+                # WETH=0.000
+
+
+rasdelitel = True # True если нужно добавить разделитель ; для импорта в таблицу и разделения
 
 tokens = ["USDT_ADDRESS","USDC_ADDRESS","YOUR_CONTRACT"] # УКАЖИТЕ КОНТРАКТЫ НУЖНЫХ МОНЕТ ЧЕРЕЗ ЗАПЯТУЮ
 
@@ -81,28 +93,47 @@ async def result():
 
     wallet_balances = {address: {token: 0 for token in tokens} for address in wallet}
 
-    # Распределяем значения по кошелькам и токенам
-    index = 0
-    for address in wallet:
-        for token in tokens:
-            if index < len(decoded_values):
-                wallet_balances[address][token] = decoded_values[index]
-                index += 1
-
-    # Вывод в требуемом формате
-    for token in tokens:
-        contract = w3_async.eth.contract(
-            address=w3_async.to_checksum_address(token),
-            abi=ERC20_ABI
-        )
-        print(f"Балансы для {await contract.functions.symbol().call()}:")
+    if viev == 2:
+        # Распределяем значения по кошелькам и токенам
+        index = 0
         for address in wallet:
-            if rasdelitel==False:
-                print(f"{address} = {wallet_balances[address][token]/10**6:.3f}")
-            if rasdelitel == True:
-                print(f"{address};{wallet_balances[address][token] / 10 ** 6:.3f}")
-        print()  # Разделитель между токенами
+            for token in tokens:
+                if index < len(decoded_values):
+                    wallet_balances[address][token] = decoded_values[index]
+                    index += 1
 
+
+        for address in wallet:
+            print(f"Балансы {address}")
+            for token in tokens:
+                contract = w3_async.eth.contract(
+                    address=w3_async.to_checksum_address(token),
+                    abi=ERC20_ABI
+                )
+                print(f"{await contract.functions.symbol().call()}={wallet_balances[address][token]/10**6:.3f}")
+
+    if viev == 1:
+        # Распределяем значения по кошелькам и токенам
+        index = 0
+        for address in wallet:
+            for token in tokens:
+                if index < len(decoded_values):
+                    wallet_balances[address][token] = decoded_values[index]
+                    index += 1
+
+        # Вывод в требуемом формате
+        for token in tokens:
+            contract = w3_async.eth.contract(
+                address=w3_async.to_checksum_address(token),
+                abi=ERC20_ABI
+            )
+            print(f"Балансы для {await contract.functions.symbol().call()}:")
+            for address in wallet:
+                if rasdelitel == False:
+                    print(f"{address} = {wallet_balances[address][token] / 10 ** 6:.3f}")
+                if rasdelitel == True:
+                    print(f"{address};{wallet_balances[address][token] / 10 ** 6:.3f}")
+            print()  # Разделитель между токенами
 
 
 asyncio.run(result())
